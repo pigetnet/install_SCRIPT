@@ -17,27 +17,27 @@ rm -rf /opt/piget/core
 git clone https://github.com/pigetnet/core /opt/piget/core
 
 #Create link
-if [ -f /net ];then
+if [ -L /net ];then
 	rm /net
 fi
 
-if [ -f /pi ];then
+if [ -L /pi ];then
 	rm /pi
 fi
 
-if [ -f /show ];then
+if [ -L /show ];then
 	rm /show
 fi
 
-if [ -f /string ];then
+if [ -L /string ];then
 	rm /string
 fi
 
-if [ -f /system ];then
+if [ -L /system ];then
 	rm /system
 fi
 
-if [ -f /do ];then
+if [ -L /do ];then
 	rm /do
 fi
 
