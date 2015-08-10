@@ -1,0 +1,40 @@
+#!/bin/bash
+echo "V1"
+
+#Generating piget directory
+mkdir /opt/piget
+mkdir /opt/user
+
+#User data directory
+mkdir /opt/user/scripts
+mkdir /opt/user/config
+mkdir /opt/user/data
+
+#We remove core functions if previously installed
+rm -rf /opt/piget/core
+
+#Cloning core scripts repository
+git clone https://github.com/pigetnet/core /opt/piget/core
+
+#Create link
+ln -sv /opt/piget/core/net /net
+ln -sv /opt/piget/core/pi /pi
+ln -sv /opt/piget/core/show /show
+ln -sv /opt/piget/core/string /string
+ln -sv /opt/piget/core/system /system
+ln -sv /opt/piget/ /do
+
+
+#Testing PIGET
+/system/modifyBashStartup core
+/pi/timeZone
+/show/description "PIGET WAS SUCCESFULLY INSTALLED"
+/show/nlbecho "Type";/show/nlbecho "sudo bash " $ERR;/show/nlbecho "to activate it!"
+
+if [ -f /boot/piget/scripts/postinstall.sh ]
+then
+        /show/description "POST INSTALL SCRIPT FOUNDED"
+        chmod +x /boot/piget/scripts/postinstall.sh
+        /boot/piget/scripts/postinstall.sh
+fi
+
