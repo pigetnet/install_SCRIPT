@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "V1"
+echo "--> Install script v1"
 
 #Generating piget directory
 mkdir /opt/piget
