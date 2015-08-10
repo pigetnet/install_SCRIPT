@@ -28,8 +28,10 @@ ln -sv /opt/piget/ /do
 #Testing PIGET
 /system/modifyBashStartup core
 /pi/timeZone
+echo "Updating package"
+apt-get update
+
 /show/description "PIGET WAS SUCCESFULLY INSTALLED"
-/show/nlbecho "Type";/show/nlbecho "sudo bash " $ERR;/show/nlbecho "to activate it!"
 
 if [ -f /boot/piget/scripts/postinstall.sh ]
 then
