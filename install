@@ -17,6 +17,30 @@ rm -rf /opt/piget/core
 git clone https://github.com/pigetnet/core /opt/piget/core
 
 #Create link
+if [ -f /net ];then
+	rm /net
+fi
+
+if [ -f /pi ];then
+	rm /pi
+fi
+
+if [ -f /show ];then
+	rm /show
+fi
+
+if [ -f /string ];then
+	rm /string
+fi
+
+if [ -f /system ];then
+	rm /system
+fi
+
+if [ -f /do ];then
+	rm /do
+fi
+
 ln -sv /opt/piget/core/net /net
 ln -sv /opt/piget/core/pi /pi
 ln -sv /opt/piget/core/show /show
@@ -24,8 +48,6 @@ ln -sv /opt/piget/core/string /string
 ln -sv /opt/piget/core/system /system
 ln -sv /opt/piget/ /do
 
-
-#Testing PIGET
 /system/modifyBashStartup core
 /pi/timeZone
 echo "Updating package"
@@ -34,9 +56,9 @@ apt-get update
 /show/description "PIGET WAS SUCCESFULLY INSTALLED"
 
 if [ -f /boot/piget/scripts/postinstall.sh ]
-then
-        /show/description "POST INSTALL SCRIPT FOUNDED"
-        chmod +x /boot/piget/scripts/postinstall.sh
-        /boot/piget/scripts/postinstall.sh
+	then
+	/show/description "POST INSTALL SCRIPT FOUNDED"
+	chmod +x /boot/piget/scripts/postinstall.sh
+	/boot/piget/scripts/postinstall.sh
 fi
 
