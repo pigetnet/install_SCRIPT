@@ -41,12 +41,17 @@ if [ -L /do ];then
 	rm /do
 fi
 
+if [ -L /user ];then
+	rm /user
+fi
+
 ln -sv /opt/piget/core/net /net
 ln -sv /opt/piget/core/pi /pi
 ln -sv /opt/piget/core/show /show
 ln -sv /opt/piget/core/string /string
 ln -sv /opt/piget/core/system /system
 ln -sv /opt/piget/ /do
+ln -sv /opt/user/ /user
 
 /system/modifyBashStartup core
 /pi/timeZone
