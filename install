@@ -9,6 +9,7 @@ mkdir /opt/user
 mkdir /opt/user/scripts
 mkdir /opt/user/config
 mkdir /opt/user/data
+mkdir /opt/user/state
 
 #We remove core functions if previously installed
 rm -rf /opt/piget/core
