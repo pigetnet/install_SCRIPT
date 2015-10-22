@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "--> Install script v1"
+echo "--> Install script v1.1"
 
 #Generating piget directory
 mkdir /opt/piget
@@ -55,7 +55,8 @@ ln -sv /opt/piget/ /do
 ln -sv /opt/user/ /user
 
 /system/modifyBashStartup core
-/pi/timeZone
+pip install tzupdate
+tzupdate
 echo "Updating package"
 apt-get update
 
