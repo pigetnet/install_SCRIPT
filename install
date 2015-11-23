@@ -1,6 +1,13 @@
 #!/bin/bash
 echo "--> Install script v1.1"
 
+if [ ! -d /boot/piget ];then
+	rm -rf /tmp/bootstrap
+	echo "Copy /boot/piget"
+	git clone https://github.com/pigetnet/bootstrap /tmp/bootstrap
+	mv /tmp/bootstrap/piget /boot/piget
+fi
+
 #Generating piget directory
 mkdir /opt/piget
 mkdir /opt/user
