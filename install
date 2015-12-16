@@ -1,6 +1,11 @@
 #!/bin/bash
 echo "--> Install script v1.1"
 
+echo "Updating package"
+apt-get update
+apt-get install -y git
+apt-get install -y pip
+
 if [ ! -d /boot/piget ];then
 	rm -rf /tmp/bootstrap
 	echo "Copy /boot/piget"
@@ -64,8 +69,7 @@ ln -sv /opt/user/ /user
 /system/modifyBashStartup core
 pip install tzupdate
 tzupdate
-echo "Updating package"
-apt-get update
+
 
 /show/description "PIGET WAS SUCCESFULLY INSTALLED"
 
