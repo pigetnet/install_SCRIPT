@@ -4,7 +4,7 @@ echo "--> Install script v1.1"
 echo "Updating package"
 apt-get update
 apt-get install -y git
-apt-get install -y pip
+apt-get install -y python-pip
 
 if [ ! -d /boot/piget ];then
 	rm -rf /tmp/bootstrap
