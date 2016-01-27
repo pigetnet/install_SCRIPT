@@ -1,82 +1,106 @@
 #!/bin/bash
-echo "--> Install script v1.1"
+if [ $(id -u) -eq 0 ];then
+	echo "--> Install script v1.1"
 
-echo "Updating package"
-apt-get update
-apt-get install -y git
-apt-get install -y python-pip
+	echo "Updating package"
+	debconf-apt-progress -- apt-get -q -y update
+	debconf-apt-progress -- apt-get -q -y upgrade
+	debconf-apt-progress -- apt-get install -q -y git
+	debconf-apt-progress -- apt-get install -q -y python-pip
 
-if [ ! -d /boot/piget ];then
-	rm -rf /tmp/bootstrap
-	echo "Copy /boot/piget"
-	git clone https://github.com/pigetnet/bootstrap /tmp/bootstrap
-	mv /tmp/bootstrap/piget /boot/piget
-fi
+	#If boot was not copied manually
+	if [ ! -d /boot/piget ];then
+		rm -rf /tmp/bootstrap
+		echo "Copy /boot/piget"
+		git clone https://github.com/pigetnet/bootstrap /tmp/bootstrap
+		mv /tmp/bootstrap/piget /boot/piget
+	fi
 
-#Generating piget directory
-mkdir /opt/piget
-mkdir /opt/user
+	#Generating piget directory
+	if [ ! -d /opt/piget ];then
+		mkdir /opt/piget
+	fi
 
-#User data directory
-mkdir /opt/user/scripts
-mkdir /opt/user/config
-mkdir /opt/user/data
-mkdir /opt/user/state
+	if [ ! -d /opt/user ];then
+		mkdir /opt/user
+	fi
 
-#We remove core functions if previously installed
-rm -rf /opt/piget/core
+	if [ ! -d /opt/user/scripts ];then
+		mkdir /opt/user/scripts
+	fi
 
-#Cloning core scripts repository
-git clone https://github.com/pigetnet/core /opt/piget/core
+	#User data directory
 
-#Create link
-if [ -L /net ];then
-	rm /net
-fi
+	if [ ! -d /opt/user/config ];then
+		mkdir /opt/user/config
+	fi
 
-if [ -L /pi ];then
-	rm /pi
-fi
+	if [ ! -d /opt/user/data ];then
+		mkdir /opt/user/data
+	fi
 
-if [ -L /show ];then
-	rm /show
-fi
+	if [ ! -d /opt/user/state ];then
+		mkdir /opt/user/state
+	fi
 
-if [ -L /string ];then
-	rm /string
-fi
+	#We remove core functions if previously installed
+	rm -rf /opt/piget/core
 
-if [ -L /system ];then
-	rm /system
-fi
+	#Cloning core scripts repository
+	git clone https://github.com/pigetnet/core /opt/piget/core
 
-if [ -L /do ];then
-	rm /do
-fi
+	#Create link
+	if [ -L /net ];then
+		rm /net
+	fi
 
-if [ -L /user ];then
-	rm /user
-fi
+	if [ -L /pi ];then
+		rm /pi
+	fi
 
-ln -sv /opt/piget/core/net /net
-ln -sv /opt/piget/core/pi /pi
-ln -sv /opt/piget/core/show /show
-ln -sv /opt/piget/core/string /string
-ln -sv /opt/piget/core/system /system
-ln -sv /opt/piget/ /do
-ln -sv /opt/user/ /user
+	if [ -L /show ];then
+		rm /show
+	fi
 
-/system/modifyBashStartup core
-pip install tzupdate
-tzupdate
+	if [ -L /string ];then
+		rm /string
+	fi
+
+	if [ -L /system ];then
+		rm /system
+	fi
+
+	if [ -L /do ];then
+		rm /do
+	fi
+
+	if [ -L /user ];then
+		rm /user
+	fi
+
+	ln -sv /opt/piget/core/net /net
+	ln -sv /opt/piget/core/pi /pi
+	ln -sv /opt/piget/core/show /show
+	ln -sv /opt/piget/core/string /string
+	ln -sv /opt/piget/core/system /system
+	ln -sv /opt/piget/ /do
+	ln -sv /opt/user/ /user
+
+	/system/modifyBashStartup core
+	pip install tzupdate
+	tzupdate
 
 
-/show/description "PIGET WAS SUCCESFULLY INSTALLED"
+	/show/description "PIGET WAS SUCCESFULLY INSTALLED"
 
-if [ -f /boot/piget/scripts/postinstall.sh ]
-	then
-	/show/description "POST INSTALL SCRIPT FOUNDED"
-	chmod +x /boot/piget/scripts/postinstall.sh
-	/boot/piget/scripts/postinstall.sh
+	if [ -f /boot/piget/scripts/postinstall.sh ]
+		then
+		/show/description "POST INSTALL SCRIPT FOUNDED"
+		chmod +x /boot/piget/scripts/postinstall.sh
+		/boot/piget/scripts/postinstall.sh
+	fi
+else
+	echo "You must be root to install piget"
+	echo "Try: curl -L piget.madnerd.org|sudo bash"
 fi
 
