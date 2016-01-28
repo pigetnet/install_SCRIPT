@@ -9,17 +9,9 @@ if [ $(id -u) -eq 0 ];then
 	OK="\033[1;32m"
 
 
-	updatePi(){
-		echo "Updating package"
-		debconf-apt-progress -- apt-get -q -y update
-		debconf-apt-progress -- apt-get -q -y upgrade
-		debconf-apt-progress -- apt-get install -q -y git
-		debconf-apt-progress -- apt-get install -q -y python-pip
-	}
-
 	pigetLogo(){
 
-echo -ne $OK
+	echo -ne $OK
 
 cat<<EOF 
 ██████╗ ██╗ ██████╗ ███████╗████████╗                 
@@ -29,15 +21,66 @@ cat<<EOF
 ██║     ██║╚██████╔╝███████╗   ██║                    
 ╚═╝     ╚═╝ ╚═════╝ ╚══════╝   ╚═╝
 EOF
-
-echo -ne $NORMAL
 }
+	updatePi(){
+		echo "Update Raspberry Pi" >> /tmp/pigetInstall.log
+		echo -ne "$INFO -----> Update Raspberry Pi $NORMAL"
+
+		echo "apt-get update" >> /tmp/pigetInstall.log
+		debconf-apt-progress -- apt-get -q -y update
+		globalError=$?
+		if [[ $globalError -ne 0 ]];then
+			echo "ERROR: Update Raspberry Pi failed" >> /tmp/pigetInstall.log
+			tail /var/log/pat/term.log >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] I wasn't able to update packages $NORMAL"
+			exit 1
+		fi
+
+		echo "apt-get upgrade" >> /tmp/pigetInstall.log
+		debconf-apt-progress -- apt-get -q -y upgrade
+		globalError=$?
+		if [[ $globalError -ne 0 ]];then
+			echo "ERROR: Upgrade Raspberry Pi failed" >> /tmp/pigetInstall.log
+			tail /var/log/pat/term.log >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] I wasn't able to upgrade packages $NORMAL"
+			exit 1
+		fi
+
+		echo "apt-get install git" >> /tmp/pigetInstall.log
+		debconf-apt-progress -- apt-get install -q -y git
+		globalError=$?
+		if [[ $globalError -ne 0 ]];then
+			echo "ERROR: Can't get git" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] I wasn't able to download git $NORMAL"
+			tail /var/log/pat/term.log >> /tmp/pigetInstall.log
+			exit 1
+		fi
+
+		echo "apt-get install python-pip" >> /tmp/pigetInstall.log
+		debconf-apt-progress -- apt-get install -q -y python-pip
+		globalError=$?
+		if [[ $globalError -ne 0 ]];then
+			echo "ERROR: Can't get pip" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] I wasn't able to download pip $NORMAL"
+			tail /var/log/pat/term.log >> /tmp/pigetInstall.log
+			exit 1
+		fi
+
+		echo -e "$OK [OK] $NORMAL"
+	}
+	
+
+	echo -ne $NORMAL
+	}
 
 	checkInternet(){
+		echo "Check internet" >> /tmp/pigetInstall.log
+		echo -ne "$INFO -----> Connect to github.com $NORMAL"
+		
 		ping -c1 www.github.com > /dev/null 2>&1 && internet=1 || internet=0
-		echo -ne "$OK -----> Connect to github.com $NORMAL"
-		if [[ $internet -eq 1 ]]
+		if [[ $internet -eq 0 ]]
 			then
+				echo "Cannot connect to github.com" >> /tmp/pigetInstall.log
 				echo -e "$ERR [ERR] : You are not connected to the internet $NORMAL"
 				exit 1
 		else
@@ -47,130 +90,341 @@ echo -ne $NORMAL
 
 	copyBoot(){
 		#If boot was not copied manually
-		if [ ! -d /boot/piget ];then
-			if [ -d /tmp/bootstrap ];then
-				rm -rf /tmp/bootstrap
-			fi
-			echo "$OK --> Copy /boot/piget $NORMAL"
-			git clone https://github.com/pigetnet/bootstrap /tmp/bootstrap
-			if [ $? -eq 0 ];then
-				mv /tmp/bootstrap/piget /boot/piget
-				if [ $? -ne 0];then
-					echo -e "$ERR ERROR : I wasn't able to copy to /boot/piget $NORMAL"
-					exit 1
-				fi
+		echo -ne "$INFO -----> Copy /boot/piget $NORMAL"
+		if [ -d /boot/piget ];then
+			rm -rf /boot/piget
+			if [ $? -ne 0 ] ;then
+				echo "Cannot erase /boot/piget" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to remove to /tmp/bootstrap $NORMAL"
+				exit 1
 			else
-				echo "$ERR ERROR : I wasn't able to clone github.com /boot/piget $NORMAL"
+				echo "Erase /boot/piget" >> /tmp/pigetInstall.log
+				echo -ne "$WARN [WARN] : Erase /boot/piget $NORMAL"
+			fi
+		fi
+
+		if [ -d /tmp/bootstrap ];then
+			
+			echo "Erase /tmp/bootstrap" >> /tmp/pigetInstall.log
+			rm -rf /tmp/bootstrap
+			
+			if [ $? -ne 0 ] ;then
+				echo "Cannot erase /tmp/bootstrap" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to remove to /tmp/bootstrap $NORMAL"
 				exit 1
 			fi
+		fi
+		
+		echo "Clone pigetnet/bootstrap to /tmp/bootstrap" >> /tmp/pigetInstall.log
+		git clone https://github.com/pigetnet/bootstrap /tmp/bootstrap >> /tmp/pigetInstall.log 2>&1
+		
+		if [ $? -eq 0 ];then
 
+			echo "Move pigetnet/bootstrap to /boot/piget" >> /tmp/pigetInstall.log
+			mv /tmp/bootstrap/piget /boot/piget
+			
+			if [ $? -ne 0 ] ;then
+				echo "Cannot copy /boot/piget" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to copy to /boot/piget $NORMAL"
+				exit 1
+			else
+				echo -e "$OK [OK] $NORMAL"
+			fi
+		else
+			echo "Cannot clone pigetnet/bootstrap" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to clone github.com /boot/piget $NORMAL"
+			exit 1
 		fi
 	}
 
 	generateDir(){
 		# Create piget directory
+		echo "Create folders" >> /tmp/pigetInstall.log
+		echo -ne "$INFO -----> Create folders $NORMAL"
+		
 		if [ ! -d /opt/piget ];then
+			echo "/opt/piget" >> /tmp/pigetInstall.log
 			mkdir /opt/piget
+			if [ $? -ne 0 ] ;then
+				echo "ERROR : /opt/piget wasn't created" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : /opt/piget wasn't created $NORMAL"
+				exit 1
+			fi
 		fi
 
 		# Create user dirs
 		if [ ! -d /opt/user ];then
+			echo "/opt/user" >> /tmp/pigetInstall.log
 			mkdir /opt/user
+			if [ $? -ne 0 ] ;then
+				echo "ERROR : /opt/user wasn't created" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : /opt/user wasn't created $NORMAL"
+				exit 1
+			fi
 		fi
 
 		# Create users scripts dir
 		if [ ! -d /opt/user/scripts ];then
+			echo "/opt/user/scripts" >> /tmp/pigetInstall.log
 			mkdir /opt/user/scripts
+			if [ $? -ne 0 ] ;then
+				echo "ERROR : /opt/user/scripts wasn't created" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : /opt/user/scripts wasn't created $NORMAL"
+				exit 1
+			fi
 		fi
 
 		# Create user config
 		if [ ! -d /opt/user/config ];then
+			echo "/opt/user/config" >> /tmp/pigetInstall.log
 			mkdir /opt/user/config
+			if [ $? -ne 0 ] ;then
+				echo "ERROR : /opt/user/config wasn't created" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : /opt/user/config wasn't created $NORMAL"
+				exit 1
+			fi
 		fi
 
 		# Create user data
 		if [ ! -d /opt/user/data ];then
+			echo "/opt/user/data" >> /tmp/pigetInstall.log
 			mkdir /opt/user/data
+			if [ $? -ne 0 ] ;then
+				echo "ERROR : /opt/user/data wasn't created" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : /opt/user/data wasn't created $NORMAL"
+				exit 1
+			fi
 		fi
 
 		# Create user state
 		if [ ! -d /opt/user/state ];then
+			echo "/opt/user/state" >> /tmp/pigetInstall.log
 			mkdir /opt/user/state
+			if [ $? -ne 0 ] ;then
+				echo "ERROR : /opt/user/state wasn't created" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : /opt/user/state wasn't created $NORMAL"
+				exit 1
+			fi
 		fi
+		echo -e "$OK [OK] $NORMAL"
 	}
 
 	generateCore(){
+		
+		echo -ne "$INFO -----> Get core $NORMAL"
+
 		if [ -d /opt/piget/core ];then
 			#We remove core functions if previously installed
+			echo "Remove /opt/piget/core" >> /tmp/pigetInstall.log
 			rm -rf /opt/piget/core
+			if [ $? -ne 0 ];then
+				echo "ERROR: Cannot remove /opt/piget/core" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to clone pigetnet/core $NORMAL"
+				exit 1
+			fi
 		fi
+				
+		
 		#Cloning core scripts repository
-		git clone https://github.com/pigetnet/core /opt/piget/core
+		echo "Clone pigetnet/core to /opt/piget/core" >> /tmp/pigetInstall.log
+		git clone https://github.com/pigetnet/core /opt/piget/core >> /tmp/pigetInstall.log 2>&1
+		
+		if [ $? -ne 0 ];then
+			echo "ERROR: Cannot clone pigetnet/core" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to clone pigetnet/core $NORMAL"
+			exit 1
+		else
+			echo -e "$OK [OK] $NORMAL"
+		fi
 	}
 
 	createSymLink(){
+
+		echo -ne "$INFO -----> Create links $NORMAL"
+		
 		#Remove previously created links
 		if [ -L /net ];then
+			echo "remove /net link" >> /tmp/pigetInstall.log
 			rm /net
+			if [ $? -ne 0 ];then
+				echo "ERROR: Cannot remove /net link" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to remove /net $NORMAL"
+				exit 1
+			fi
 		fi
 
 		if [ -L /pi ];then
+			echo "remove /pi link" >> /tmp/pigetInstall.log
 			rm /pi
+			if [ $? -ne 0 ];then
+				echo "ERROR: Cannot remove /pi link" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to remove /pi $NORMAL"
+				exit 1
+			fi
 		fi
 
 		if [ -L /show ];then
+			echo "remove /show link" >> /tmp/pigetInstall.log
 			rm /show
+			if [ $? -ne 0 ];then
+				echo "ERROR: Cannot remove /show link" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to remove /show $NORMAL"
+				exit 1
+			fi
 		fi
 
 		if [ -L /string ];then
+			echo "remove /string link" >> /tmp/pigetInstall.log
 			rm /string
+			if [ $? -ne 0 ];then
+				echo "Cannot remove /string link" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to remove /string $NORMAL"
+				exit 1
+			fi
 		fi
 
 		if [ -L /system ];then
+			echo "remove /system link" >> /tmp/pigetInstall.log
 			rm /system
+			if [ $? -ne 0 ];then
+				echo "ERROR: Cannot remove /system link" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to remove /system $NORMAL"
+				exit 1
+			fi
 		fi
 
 		if [ -L /do ];then
+			echo "remove /do link" >> /tmp/pigetInstall.log
 			rm /do
+			if [ $? -ne 0 ];then
+				echo "ERROR: Cannot remove /do link" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to remove /do $NORMAL"
+				exit 1
+			fi	
 		fi
 
 		if [ -L /user ];then
 			rm /user
+			if [ $? -ne 0 ];then
+				echo "ERROR: Cannot remove /user link" >> /tmp/pigetInstall.log
+				echo -e "$ERR [ERR] : I wasn't able to create /user $NORMAL"
+				exit 1
+			fi
 		fi
 
 		#Generate links
-		ln -sv /opt/piget/core/net /net
-		ln -sv /opt/piget/core/pi /pi
-		ln -sv /opt/piget/core/show /show
-		ln -sv /opt/piget/core/string /string
-		ln -sv /opt/piget/core/system /system
-		ln -sv /opt/piget/ /do
-		ln -sv /opt/user/ /user
-	}
 
-	editBashrc(){
-		/system/modifyBashStartup core
+		echo "create /net link" >> /tmp/pigetInstall.log
+		ln -s /opt/piget/core/net /net
+		if [ $? -ne 0 ];then
+			echo "ERROR: Cannot create /net link" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to create /net $NORMAL"
+			exit 1
+		fi
+
+		echo "create /pi link" >> /tmp/pigetInstall.log
+		ln -s /opt/piget/core/pi /pi
+		if [ $? -ne 0 ];then
+			echo "ERROR: Cannot create /pi link" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to create /pi $NORMAL"
+			exit 1
+		fi			
+
+		echo "create /show link" >> /tmp/pigetInstall.log
+		ln -s /opt/piget/core/show /show
+		if [ $? -ne 0 ];then
+			echo "ERROR: Cannot create /show link" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to create /show $NORMAL"
+			exit 1
+		fi		
+
+		echo "create /string link" >> /tmp/pigetInstall.log
+		ln -s /opt/piget/core/string /string
+		if [ $? -ne 0 ];then
+			echo "ERROR: Cannot create /string link" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to create /string $NORMAL"
+			exit 1
+		fi		
+		
+		echo "create /system link" >> /tmp/pigetInstall.log
+		ln -s /opt/piget/core/system /system
+		if [ $? -ne 0 ];then
+			echo "ERROR: Cannot create /system link" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to create /system $NORMAL"
+			exit 1
+		fi		
+		
+		echo "create /do link" >> /tmp/pigetInstall.log
+		ln -s /opt/piget/ /do
+		if [ $? -ne 0 ];then
+			echo "ERROR: Cannot create /do link" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to create /do $NORMAL"
+			exit 1
+		fi		
+		
+		echo "create /user link" >> /tmp/pigetInstall.log
+		ln -s /opt/user/ /user
+		if [ $? -ne 0 ];then
+			echo "ERROR: Cannot create /user link" >> /tmp/pigetInstall.log
+			echo -e "$ERR [ERR] : I wasn't able to create /user $NORMAL"
+			exit 1
+		fi		
+	
+		echo -e "$OK [OK] $NORMAL"
 	}
 
 	configureTimeZone(){
-		pip install tzupdate
-		tzupdate
+	echo -ne "$INFO -----> Setup timezone : $NORMAL"
+
+	#Vérifie que Python PIP est disponible
+	debconf-apt-progress -- apt-get install -q -y python-pip
+	globalError=$?
+	if [[ $globalError -ne 0 ]];then
+		echo -e "$ERR [ERR] I wasn't able to download pip $NORMAL"
+		exit 1
+	fi
+
+	#Installation silencieuse du Package python tzupdate
+	pip install --quiet tzupdate
+
+	#Si l'installation c'est correctement passé lancé tzupdate silencieusement
+	if [ -f /usr/local/bin/tzupdate ];then
+		tzupdate > /dev/null >> /tmp/pigetInstall.log 2>&1
+
+		#On récupère après la zone géographique pour l'afficher
+		currentTimeZone=$(tzupdate -p|awk '{print $4}')
+		echo -e "$WARN : $currentTimeZone $NORMAL"
+	else
+		echo -e "$WARN [WARN] I wasn't able to setup timezone $NORMAL"
+	fi
+
 	}
 
 	postInstallScript(){
 		if [ -f /boot/piget/scripts/postinstall.sh ];then
-			/show/description "POST INSTALL SCRIPT FOUNDED"
+			echo -e "$INFO -----> Setup timezone : $NORMAL"
 			chmod +x /boot/piget/scripts/postinstall.sh
 			/boot/piget/scripts/postinstall.sh
 		fi
 	}
 
+	clear
 	pigetLogo
+	echo -e "$WARN Logs will be saved at /tmp/pigetInstall.log $NORMAL"
+	
+	# Start log
+	echo "Piget Install Log" > /tmp/pigetInstall.log
+	echo "-----------------" >> /tmp/pigetInstall.log
+	
 	checkInternet
-
-	
-
-	
+	updatePi
+	copyBoot
+	generateDir
+	generateCore
+	createSymLink
+	configureTimeZone
+	/pi/syncFromBoot
+	postinstallScript
 	
 else
 	echo "You must be root to install piget"
