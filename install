@@ -33,14 +33,37 @@ EOF
 echo -ne $NORMAL
 }
 
+	checkInternet(){
+		ping -c1 www.github.com > /dev/null 2>&1 && internet=1 || internet=0
+		echo -ne "$OK -----> Connect to github.com $NORMAL"
+		if [[ $internet -eq 1 ]]
+			then
+				echo -e "$ERR [ERR] : You are not connected to the internet $NORMAL"
+				exit 1
+		else
+			echo -e "$OK [OK] $NORMAL"
+		fi
+	}
 
 	copyBoot(){
 		#If boot was not copied manually
 		if [ ! -d /boot/piget ];then
-			rm -rf /tmp/bootstrap
-			echo "Copy /boot/piget"
+			if [ -d /tmp/bootstrap ];then
+				rm -rf /tmp/bootstrap
+			fi
+			echo "$OK --> Copy /boot/piget $NORMAL"
 			git clone https://github.com/pigetnet/bootstrap /tmp/bootstrap
-			mv /tmp/bootstrap/piget /boot/piget
+			if [ $? -eq 0 ];then
+				mv /tmp/bootstrap/piget /boot/piget
+				if [ $? -ne 0];then
+					echo -e "$ERR ERROR : I wasn't able to copy to /boot/piget $NORMAL"
+					exit 1
+				fi
+			else
+				echo "$ERR ERROR : I wasn't able to clone github.com /boot/piget $NORMAL"
+				exit 1
+			fi
+
 		fi
 	}
 
@@ -143,6 +166,7 @@ echo -ne $NORMAL
 	}
 
 	pigetLogo
+	checkInternet
 
 	
 
