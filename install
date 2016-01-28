@@ -69,10 +69,6 @@ EOF
 		echo -e "$OK [OK] $NORMAL"
 	}
 	
-
-	echo -ne $NORMAL
-	}
-
 	checkInternet(){
 		echo "Check internet" >> /tmp/pigetInstall.log
 		echo -ne "$INFO -----> Connect to github.com $NORMAL"
@@ -376,22 +372,14 @@ EOF
 	configureTimeZone(){
 	echo -ne "$INFO -----> Setup timezone : $NORMAL"
 
-	#Vérifie que Python PIP est disponible
-	debconf-apt-progress -- apt-get install -q -y python-pip
-	globalError=$?
-	if [[ $globalError -ne 0 ]];then
-		echo -e "$ERR [ERR] I wasn't able to download pip $NORMAL"
-		exit 1
-	fi
-
-	#Installation silencieuse du Package python tzupdate
+	#Sielnt install for tzupdate
 	pip install --quiet tzupdate
 
-	#Si l'installation c'est correctement passé lancé tzupdate silencieusement
+	#Check if tzupdate for installed
 	if [ -f /usr/local/bin/tzupdate ];then
 		tzupdate > /dev/null >> /tmp/pigetInstall.log 2>&1
 
-		#On récupère après la zone géographique pour l'afficher
+		#Get geographic region
 		currentTimeZone=$(tzupdate -p|awk '{print $4}')
 		echo -e "$WARN : $currentTimeZone $NORMAL"
 	else
@@ -402,9 +390,14 @@ EOF
 
 	postInstallScript(){
 		if [ -f /boot/piget/scripts/postinstall.sh ];then
-			echo -e "$INFO -----> Setup timezone : $NORMAL"
+			echo -ne "$INFO -----> Start postinstall.sh $NORMAL"
 			chmod +x /boot/piget/scripts/postinstall.sh
 			/boot/piget/scripts/postinstall.sh
+			if [ $? -eq 0 ];then
+				echo -e "$OK [OK] $NORMAL"
+			else
+				echo -e "$WARN [WARN] Post Install script failed $NORMAL"
+			fi
 		fi
 	}
 
@@ -416,6 +409,7 @@ EOF
 	echo "Piget Install Log" > /tmp/pigetInstall.log
 	echo "-----------------" >> /tmp/pigetInstall.log
 	
+	cd /
 	checkInternet
 	updatePi
 	copyBoot
@@ -424,7 +418,10 @@ EOF
 	createSymLink
 	configureTimeZone
 	/pi/syncFromBoot
-	postinstallScript
+	postInstallScript
+
+	/show/help
+	
 	
 else
 	echo "You must be root to install piget"
