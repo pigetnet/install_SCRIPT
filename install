@@ -66,7 +66,12 @@ EOF
 			exit 1
 		fi
 
+		pip install --quiet tabulate
+
+
 		echo -e "$OK [OK] $NORMAL"
+
+
 	}
 	
 	checkInternet(){
@@ -410,17 +415,22 @@ EOF
 	echo "-----------------" >> /tmp/pigetInstall.log
 	
 	cd /
-	checkInternet
-	updatePi
-	copyBoot
-	generateDir
-	generateCore
-	createSymLink
-	configureTimeZone
-	/pi/syncFromBoot
-	postInstallScript
+#	checkInternet
+#	updatePi
+#	copyBoot
+#	generateDir
+#	generateCore
+#	createSymLink
+#	configureTimeZone
+#	. /pi/syncFromBoot
+#	postInstallScript
+#
+	
+	echo " "
+	echo -e "$INFO Installation finished ! $OK"
+	echo -e "--------------------------------------- $NORMAL"
+	echo -e "Type $OK /pi/start $NORMAL to start using piget"
 
-	/show/help
 	
 	
 else
